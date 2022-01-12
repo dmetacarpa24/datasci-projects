@@ -1,0 +1,215 @@
+---
+title: "Beaches in Galicia"
+author: "David Metacarpa, Caroline Tilton, and Luis de Pablo"
+date: "December 8, 2021"
+output:
+ rmdformats::material:
+   thumbnails: false
+   highlight: "kate"
+self_contained: false
+---
+
+```{r setup, include = FALSE}
+library(tidyverse)
+library(rmdformats)
+library(kableExtra) # for example code; delete if not needed
+
+library(vegan)
+library(usedist)
+
+library(shiny)
+library(leaflet)
+library(shinythemes)
+
+library(cowplot)
+
+# Set code chunk defaults
+knitr::opts_chunk$set(echo = FALSE,
+                     message = FALSE,
+                     warning = FALSE,
+                     fig.align = "center")
+
+# Set R environment options
+options(knitr.kable.NA = '')
+beaches <- read_csv("Data/beachData.csv")
+controlSummary<- read.csv("Data/controlSummary.csv")
+controlSummary <- controlSummary%>%
+  select(-  X)
+
+##correction for america 1 variable
+controlSummary$site[1] <- "America 1"
+
+```
+
+# What Makes the Beaches in Galicia Unique?
+
+## Playa America, Carnota, Corrubedo, Barra, Nerga, Lanzada, and Samil
+
+### How do nutrients levels, algal cover, fauna diversity, pitch, and sediment levels vary between these beaches?
+
+
+<!-- Add photo -->
+
+```{r, fig.cap = "Playa de Soesto, Galicia, Spain"}
+knitr::include_graphics("Data/beachimg.jpg")
+```
+
+Our blog is intended to inform users about the sediment nutrients, algal cover, fauna diversity, and locations of eight different sites in Galicia, Spain: Two on Playa America, and one on each of Playa Carnota, Corrubedo, Barra, Nerga, Lanzada, and Samil. Our blog is centered around visualizations that highlight the diversity of the beaches, exploring both the similarities between different beaches' diversity as well as the interaction between diversity, algal cover, and nutrient concentration.  In addition, there is an interactive map allowing users to click on and view the beaches where the data was collected.
+
+We decided to focus on the individual characteristics of eight different sites in Spain and how the beaches vary in biodiversity and geography. The data that we wrangled and analysed included species types, nutrients levels, locations, beach pitches, similarity, and experimental biodiversity levels.For each of the eight beaches, six samples of sediment, interstitial water, and surf water were analyzed for nutrient content of PO4, NO2 + NO3, and NH4. We looked at PO4 specifically because of the impact that it has on biodiversity in the area.
+
+The data centered around biodiversity was taken during an experiment that compared biodiversity levels when bait was left in the sand. In the field, researchers collected sediment cores from about knee-deep in the water off the beach. These cores were taken back to the lab, where researchers identified all the species present and logged the number of representatives for each species. These data were used to estimate the density per square meter of each species, and it was used to identify the organism diversity found after three different treatments. The treatments included placing a piece of “bait” (squid) in the sand for 10 and 20 minutes, and after the duration of the treatment a 1m^2 core sample was taken from the sand.
+
+
+<!-- add new tabs -->
+# Beach Views {.tabset .tabset-fade .tabset-pills}
+
+```{r, out.width = "100%", out.extra = 'data-external="1" frameborder = "no"'}
+knitr::include_app("https://ldepablo22.shinyapps.io/beachviews",
+                   height = "700px")
+```
+
+
+# Cluster Analysis {.tabset .tabset-fade .tabset-pills}
+  The cluster analysis depicts how similar all of the beaches are based on the Bray-curtis similarity index. We use the control data for species density in order. Bray-Curtis similarity gauges the similarity of diversity sample sets and takes the ratio of the two times the intersection over the sum, with an index range from zero to one.  In other words, if two beaches are exactly the same, the intersection and union of data would be the same so the Bray-Curtis similarity between the two would be equal to 1.
+  
+  There are several commonly-used similarity indeces, including Jaccard, Sorensen, and Bray-Curtis. Jaccard and Sorensen are based solely on species incidence but Bray-Curtis is calculated using species abundance. Jaccard only focuses on whether species are present are not but Bray-Curtis accounts for the species abundance. We chose to use Bray-Curtis when comparing beaches since we have data on species abundance, and since species abundance is ecologically relevant.
+  
+  The first visualization depicts a hierarchical clustering of similarity. Here, more similar sites are grouped more closely together. This model was constructed from a dissimilarity matrix containing comparisons of all the sites. The second visualization is a non-metric multidimensional scaling plot constructed from the same data. In this plot, the distance between points is their dissimilarity. Points that are close together are more likely to be similar than points ordinated far apart from each other.
+
+```{r, fig.cap = "Hierarchical Clustering of Beaches by Fauna Composition", echo = TRUE, fig.height = 4}
+
+#bray-curtis dissimilarity index comparison/groupings
+bray_dist <- vegdist(controlSummary[-1], method = "bray")
+
+names <- controlSummary[[1]]
+bray_dist <- dist_setNames(bray_dist, names)
+
+plot(
+  hclust(bray_dist),
+  hang = -1,
+  main = "Sites clustered by Bray-Curtis similarity",
+  axes = FALSE, ylab = "", xlab = "",
+  sub = "")
+
+```
+
+```{r, fig.cap = "Non-metric Multidimensional Scaling of Beaches by Fauna Composition (Stress = 0.046)", echo = TRUE, message = FALSE, results = 'hide', fig.height = 4}
+#NMDS (also using bray-curtis dissimilarity)
+nmds <- metaMDS(controlSummary[-1], distance = "bray", autotransform = FALSE)
+
+pointData <- data.frame(nmds$points) %>%
+  mutate(site = controlSummary$site)
+
+speciesData <- data.frame(nmds$species)
+
+#plot sites
+ggplot() +
+  geom_point(data = pointData, size = 5, alpha = 0.5, aes(x = MDS1, y = MDS2, col = site))
+
+```
+
+
+
+# Fauna Diversity {.tabset .tabset-fade .tabset-pills}
+  In the field, researchers collected sediment cores from about knee-deep in the water off beaches in order to gather data to measure fauna diversity. These cores were taken back to the lab, where researchers identified all the species present and logged the number of representatives for each species. These data were used to estimate the density per square meter of each species. Bar chart compares the organism diversity found after three different treatments. The treatments included placing a piece of “bait” (squid) in the sand for 10 and 20 minutes, and after the duration of the treatment a 1m$^2$ core sample was taken from the sand. We included a widget for the bar graph that allows users to select the site location where each experiment was performed, and this allows users to easily compare the effectiveness of the treatments and the diversity levels from the array of sites. There was no significant pattern found from the results of all the different sites, but interactions between different organisms did affect the results of the treatments. There was no obvious trend across all of the beaches, but at sites, like Barra, where there was less diversity found after the treatment, we considered the idea that the bait could have drawn one or two specific organisms that either scared away or beat out other organisms. And at sites like Lanzada, where there was more diversity found with the ten and twenty minute treatments, we thought that the bait could have drawn a wider variety of species, leading to more diversity.
+  
+```{r, fig.cap = "Average Diversity between Treatments", echo = TRUE}
+  #comparison of treatments
+diversityData <- beaches %>%
+  select(c("site", "controlDiversity", "tenMinDiversity", "twentyMinDiversity")) %>%
+  pivot_longer(-site, names_to = "treatment", values_to = "diversity")
+
+diversityData$treatment <- str_replace_all(diversityData$treatment, pattern = "tenMinDiversity", replacement = "10")
+diversityData$treatment <- str_replace_all(diversityData$treatment, pattern = "twentyMinDiversity", replacement = "20")
+diversityData$treatment <- str_replace_all(diversityData$treatment, pattern = "controlDiversity", replacement = "control")
+
+#average diversity between treatments
+ggplot(data = diversityData, aes(x = treatment, y = diversity)) +
+  geom_boxplot() +
+  labs(x = "Type of Treatment", y = "Diversity")
+```
+
+```{r, fig.cap = "All beach facets included in shiny app"}
+ggplot(data = diversityData, aes(x = fct_relevel(treatment, "control"), 
+                                 y = diversity)) +
+  geom_col(aes(fill = treatment)) +
+  scale_color_brewer() +
+  theme_bw() +
+  facet_wrap(~ site) + 
+  labs(x = "Type of Treatment", y = "Diversity")
+
+```
+
+# Algae Cover {.tabset .tabset-fade .tabset-pills}
+```{r, fig.cap = "Algae Cover", fig.height = 10}
+
+#generate graphs of algae cover vs nutrinet concentration
+algpo4 <- ggplot(data = beaches, aes(x = po4SedMean, y = algaePercentCover)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  ylim(0, 2.5) +
+  labs(x = "PO4 Density (ug/g)", y = "Algae Cover (%)")
+
+algno2no3 <- ggplot(data = beaches, aes(x = no2no3SedMean, y = algaePercentCover)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  ylim(0, 2.5) +
+  labs(x = "NO2 + NO3 Density (ug/g)", y = "Algae Cover (%)")
+
+algnh4 <- ggplot(data = beaches, aes(x = nh4SedMean, y = algaePercentCover)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  ylim(0, 2.5) +
+  xlim(0, 10) + 
+  labs(x = "NH4 Density (ug/g)", y = "Algae Cover (%)")
+
+plot_grid(algpo4, algno2no3, algnh4, labels = "auto", align = "v", nrow = 3)
+
+```
+
+In order to gauge algal cover, algal wracks were measured at six transects along each beach, and they were measured from the high water mark to the base of the dunes at the top of the beach.  We used these data to estimate the percent cover of algae on each beach.  In addition, samples of sediment, interstitial water, and surf water were collected at each of the transects and analyzed for concentration of PO4, NO2 + NO3, and NH4.  Here, we visualize the relationship between the content of each of the nutrients in the sediment and percentage of algal cover.  In general, algal cover appears to have a direct relationship with PO4 and NH4 concentration (1%/$\mu g/g$ and 0.1%/$\mu g/g$, respectively), while having an inverse relationship with NO2 + NO3 concentration (-2%/$\mu g/g$).  In addition, the residuals in the scatter plot of PO4 are the smallest of the three, meaning that it has the strongest linear correlation with algal cover.  Algal cover’s linear correlation is slightly weaker with NH4, and it is weakest with NO2 + NO3.  While it is impossible to tell by these data whether these nutrients cause differences in biodiversity, it is important to acknowledge their relationships of varying significance are certainly present.
+
+# Nutrient Levels {.tabset .tabset-fade .tabset-pills}
+```{r, fig.cap = "Nutrient Levels Across Beaches", fig.height = 10}
+#assemble plots of nutrient data
+
+sedpo4 <- ggplot(data = beaches, aes(x = po4SedMean, y = controlDiversity)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  ylim(0, 2.5) +
+  labs(x = "PO4 Density (ug/g)", y = "Shannon Diversity Index")
+
+sedno2no3 <- ggplot(data = beaches, aes(x = no2no3SedMean, y = controlDiversity)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  ylim(0, 2.5) +
+  labs(x = "NO2 + NO3 Density (ug/g)", y = "Shannon Diversity Index")
+
+sednh4 <- ggplot(data = beaches, aes(x = nh4SedMean, y = controlDiversity)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  ylim(0, 2.5) +
+  labs(x = "NH4 Density (ug/g)", y = "Shannon Diversity Index")
+
+plot_grid(sedpo4, sedno2no3, sednh4, labels = "auto", align = "v", nrow = 3)
+```
+
+Above are scatter plots for the biodiversity of the beaches (rated on the Shannon Diversity Index) versus the content of each of the nutrients in the sediment, in micrograms per gram sediment.  A key difference between the three is that as PO4 content increases, biodiversity tends to slightly decline (>-0.1 $points/\mu g/g$), while as NO2 + NO3 content and NH4 content increase, biodiversity also tends to increase (~10 $points/\mu g/g$ and ~0.1 $points/\mu g/g$, respectively).  This is different from the data for algal cover, and the only nutrient that has the same type of relationship with both algal cover and biodiversity is NH4.
+
+Also, as you can see by the size of the shaded region of uncertainty, the residuals on the graphs of PO4 and NH4 are much larger than those of NO2 + NO3, meaning that biodiversity has a stronger linear correlation with NO2 + NO3 content than it does with PO4 content or NH4 content.  Again, while it is impossible to tell by these data whether these nutrients cause differences in biodiversity, it is important to acknowledge their relationships of varying significance are certainly present.
+
+
+```{r, fig.cap = "Relationship between fauna diversity and algal cover", fig.height=4.0, fig.width = 6.0}
+ggplot(data = beaches, aes(x = algaePercentCover, y = controlDiversity)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(x = "Algae Cover (%)", y = "Shannon Diversity Index")
+
+model <- lm(formula = controlDiversity ~ algaePercentCover, data = beaches)
+summary(model)
+```
+
+The scatter plot above of biodiversity on the Shannon Diversity Index versus algal cover percentage suggests that there is a direct linear relationship between the two, given the positive slope of the line of best fit.  However, there are other trends on the data plot that suggest otherwise.  The biggest example of this, for example, is how the data actually seems to have an inverse relationship between 0.5 and 1.5 percent algal cover, but an outlier at 3 percent algal cover has such high leverage that the line of best fit suggests an overall direct linear relationship.
+
+A linear regression analysis shows that the scatter plot shows no evidence of a linear relationship between diversity and algal cover.  Since the R squared value for the regression line is very small (~0.1), there is not a significant linear correlation between the two variables, and since the p-value for algal cover percentage is quite large (~0.45), there is no evidence that the two have a linear relationship.  This lack of evidence is somewhat expected due to the differences in relationships that algal cover and biodiversity each have with PO4 and NO2 + NO3.
