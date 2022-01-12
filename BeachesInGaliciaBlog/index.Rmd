@@ -64,6 +64,7 @@ The data centered around biodiversity was taken during an experiment that compar
 <!-- add new tabs -->
 # Beach Views {.tabset .tabset-fade .tabset-pills}
 
+NOTE: This tab does not work due to issues with Google's map software.  My colleague's published Shiny App, which is supposed to be embedded, can be viewed [here](https://ldepablo22.shinyapps.io/beachviews).
 ```{r, out.width = "100%", out.extra = 'data-external="1" frameborder = "no"'}
 knitr::include_app("https://ldepablo22.shinyapps.io/beachviews",
                    height = "700px")
